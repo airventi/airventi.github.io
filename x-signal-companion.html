@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X Signal Companion — Post Pre-Check, Pace Tracker & Algorithm Playbook</title>
+<style>
+:root{
+  --bg:#0C1018; --panel:#151B28; --panel2:#111624; --line:#232C3F;
+  --ink:#E9EDF5; --dim:#97A2B8; --faint:#5C6780;
+  --green:#43D17C; --amber:#F5A93B; --red:#F0564F; --info:#59B8D4;
+  --green-bg:rgba(67,209,124,.10); --amber-bg:rgba(245,169,59,.10);
+  --red-bg:rgba(240,86,79,.10); --info-bg:rgba(89,184,212,.10);
+  --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+
+/* Header */
+header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:0}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:.02em}
+.brand h1 .x{color:var(--info)}
+.tagline{color:var(--dim);font-size:13px;margin-top:6px;max-width:640px}
+.provenance{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px;letter-spacing:.03em}
+.provenance b{color:var(--dim);font-weight:600}
+
+/* Tabs */
+nav{display:flex;gap:4px;margin:18px 0 22px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.tab{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:12.5px;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;letter-spacing:.02em}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--info)}
+.tab:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:4px}
+.panel{display:none}
+.panel.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.panel.active{animation:none}}
+
+/* Cards & common */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:8px}
+.card h3{font-size:13.5px;font-weight:700;margin:14px 0 6px}
+.card p{color:var(--dim);font-size:13.5px;margin-bottom:8px}
+.card p strong{color:var(--ink)}
+.card ul{margin:6px 0 10px 18px;color:var(--dim);font-size:13.5px}
+.card li{margin-bottom:5px}
+.card li strong{color:var(--ink)}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.badge{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;border-radius:20px;vertical-align:1px;margin-left:6px}
+.badge.code{background:var(--green-bg);color:var(--green);border:1px solid rgba(67,209,124,.3)}
+.badge.doc{background:var(--info-bg);color:var(--info);border:1px solid rgba(89,184,212,.3)}
+.badge.est{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,169,59,.3)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--faint);font-family:var(--mono);margin-bottom:14px}
+.legend span{display:flex;align-items:center;gap:5px}
+
+/* Composer */
+textarea{width:100%;min-height:130px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:var(--sans);font-size:15px;padding:12px;resize:vertical}
+textarea:focus{outline:2px solid var(--info);outline-offset:-1px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--panel2);border:none;color:var(--dim);font-family:var(--mono);font-size:12px;padding:8px 14px;cursor:pointer}
+.seg button.on{background:var(--info-bg);color:var(--info)}
+.seg button:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);font-family:var(--mono);cursor:pointer;user-select:none}
+.chk input{accent-color:var(--info);width:15px;height:15px;cursor:pointer}
+.btn{background:var(--info);color:#08111A;border:none;border-radius:8px;font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 20px;cursor:pointer;letter-spacing:.02em}
+.btn:hover{filter:brightness(1.1)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:600}
+.btn.ghost:hover{color:var(--ink);border-color:var(--dim)}
+.charcount{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:auto}
+.charcount.over{color:var(--red)}
+
+/* Reach meter — signature element */
+.meter-block{margin:16px 0 6px}
+.meter-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.08em;margin-bottom:5px}
+.meter{position:relative;height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.meter-fill{height:100%;width:0%;border-radius:20px;transition:width .5s ease,background .5s ease;background:var(--green)}
+@media (prefers-reduced-motion:reduce){.meter-fill{transition:none}}
+.meter-verdict{font-family:var(--mono);font-size:13px;font-weight:700;margin-top:8px}
+.meter-sub{font-size:12.5px;color:var(--dim);margin-top:3px}
+
+/* Findings */
+.finding{display:flex;gap:10px;padding:11px 12px;border-radius:8px;margin-bottom:8px;font-size:13.5px;border:1px solid}
+.finding .dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px}
+.finding .fbody{flex:1}
+.finding .ftitle{font-weight:700;font-size:13.5px}
+.finding .fdetail{color:var(--dim);font-size:12.5px;margin-top:2px}
+.finding.red{background:var(--red-bg);border-color:rgba(240,86,79,.25)}
+.finding.red .dot{background:var(--red)}
+.finding.amber{background:var(--amber-bg);border-color:rgba(245,169,59,.25)}
+.finding.amber .dot{background:var(--amber)}
+.finding.green{background:var(--green-bg);border-color:rgba(67,209,124,.25)}
+.finding.green .dot{background:var(--green)}
+.finding.info{background:var(--info-bg);border-color:rgba(89,184,212,.25)}
+.finding.info .dot{background:var(--info)}
+
+/* Tracker */
+.tracker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.counter{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.counter .cname{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.cnums{display:flex;align-items:baseline;gap:8px;margin:8px 0 2px}
+.cnums .big{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1}
+.cnums .unit{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.cbars{margin:8px 0 10px}
+.cbar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cbar-label{font-family:var(--mono);font-size:10px;color:var(--faint);width:34px;text-align:right}
+.cbar{flex:1;height:7px;background:var(--panel2);border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.cbar-fill{height:100%;border-radius:10px;background:var(--green);transition:width .3s ease}
+.cbar-val{font-family:var(--mono);font-size:10px;color:var(--dim);width:64px}
+.cbtns{display:flex;gap:8px}
+.cbtns button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;font-family:var(--mono);font-size:14px;padding:8px 0;cursor:pointer;font-weight:700}
+.cbtns button:hover{border-color:var(--info);color:var(--info)}
+.cbtns button.minus{flex:0 0 44px;color:var(--dim)}
+.cbtns button:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
+.climit{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:8px;line-height:1.5}
+.cstatus{font-family:var(--mono);font-size:11px;font-weight:700;margin-top:6px}
+.cooldown-banner{display:none;background:var(--amber-bg);border:1px solid rgba(245,169,59,.35);border-radius:10px;padding:14px;margin-bottom:14px}
+.cooldown-banner.show{display:block}
+.cooldown-banner .cd-title{font-family:var(--mono);font-weight:700;color:var(--amber);font-size:13px}
+.cooldown-banner .cd-timer{font-family:var(--mono);font-size:26px;font-weight:700;margin:4px 0}
+.cooldown-banner p{font-size:12.5px;color:var(--dim)}
+.tracker-tools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.note-strip{font-size:12px;color:var(--faint);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:12px 0}
+
+/* Playbook tables */
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 12px}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);color:var(--dim);vertical-align:top}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.pos{color:var(--green);font-family:var(--mono);font-weight:700}
+.neg{color:var(--red);font-family:var(--mono);font-weight:700}
+
+details{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--panel2)}
+summary{padding:11px 14px;cursor:pointer;font-size:13.5px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+summary::before{content:'▸';font-family:var(--mono);color:var(--faint);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details .dbody{padding:0 14px 12px;font-size:13px;color:var(--dim)}
+details .dbody ul{margin:4px 0 8px 18px}
+details .dbody li{margin-bottom:4px}
+details .dbody p{margin-bottom:8px}
+details .dbody strong{color:var(--ink)}
+
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);font-family:var(--mono);line-height:1.7}
+@media(max-width:560px){
+  .brand h1{font-size:17px}
+  .cnums .big{font-size:26px}
+  .card{padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><h1><span class="x">𝕏</span> SIGNAL COMPANION</h1></div>
+  <div class="tagline">Check posts before you send them, pace your activity so you never trip a limit, and understand exactly what the algorithm rewards — using X's own open-source code, not folklore.</div>
+  <div class="provenance">SOURCES — <b>[CODE]</b> verified in X's open-source algorithm (Phoenix/Home-Mixer release, Jan 2026) · <b>[DOCS]</b> X Help Center / published policy · <b>[EST]</b> conservative estimate, no official number exists</div>
+</header>
+
+<nav role="tablist">
+  <button class="tab active" data-tab="check" role="tab">01 · CHECK A POST</button>
+  <button class="tab" data-tab="pace" role="tab">02 · PACE TRACKER</button>
+  <button class="tab" data-tab="algo" role="tab">03 · THE ALGORITHM</button>
+  <button class="tab" data-tab="rules" role="tab">04 · STAY UNSUSPENDED</button>
+</nav>
+
+<!-- ============ TAB 1: CHECK A POST ============ -->
+<section class="panel active" id="panel-check">
+  <div class="card">
+    <div class="eyebrow">Pre-flight check</div>
+    <h2>Paste your draft before you post it</h2>
+    <p>Scans for patterns that reduce reach, make you invisible to muters, or risk a rules violation. Nothing leaves this page — the check runs entirely in your browser.</p>
+    <textarea id="draft" placeholder="Type or paste your post or reply here…" aria-label="Draft post text"></textarea>
+    <div class="controls">
+      <div class="seg" id="kindSeg">
+        <button class="on" data-kind="post">POST</button>
+        <button data-kind="reply">REPLY</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="hasImage"> has image</label>
+      <label class="chk"><input type="checkbox" id="hasVideo"> has video</label>
+      <label class="chk"><input type="checkbox" id="isPremium"> Premium account</label>
+      <span class="charcount" id="charcount">0 / 280</span>
+    </div>
+    <div class="controls">
+      <button class="btn" id="analyzeBtn">RUN PRE-CHECK</button>
+      <button class="btn ghost" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="meter-block" id="meterBlock" style="display:none">
+      <div class="meter-labels"><span>BURIED</span><span>SIGNAL STRENGTH</span><span>BOOSTED</span></div>
+      <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+      <div class="meter-verdict" id="verdict"></div>
+      <div class="meter-sub" id="verdictSub"></div>
+    </div>
+  </div>
+
+  <div id="findings"></div>
+
+  <div class="card">
+    <div class="legend">
+      <span><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span>RULES RISK — could get the post limited or the account flagged</span>
+      <span><span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block"></span>REACH RISK — algorithm or audience signals working against you</span>
+      <span><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>WORKING FOR YOU — signals the ranking model rewards</span>
+      <span><span style="width:8px;height:8px;border-radius:50%;background:var(--info);display:inline-block"></span>GOOD TO KNOW — context, no action needed</span>
+    </div>
+    <p style="font-size:12px;color:var(--faint)">This checker is pattern-based and can't judge context the way a human (or X's moderation systems) can. A clean result is not a guarantee, and a flag is not an accusation — it's a "look twice before sending."</p>
+  </div>
+</section>
+
+<!-- ============ TAB 2: PACE TRACKER ============ -->
+<section class="panel" id="panel-pace">
+  <div class="cooldown-banner" id="cooldownBanner">
+    <div class="cd-title">⏸ COOLDOWN SUGGESTED</div>
+    <div class="cd-timer" id="cooldownTimer">30:00</div>
+    <p id="cooldownReason">You're moving faster than a human normally does. Pausing now keeps automated systems from taking a second look at your account.</p>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Behavior pacing</div>
+    <h2>Tap as you go — stay out of the bot-detection zone</h2>
+    <p>X enforces hard daily limits <span class="badge doc">DOCS</span> and softer behavior-based checks that trigger well before them. Tap <strong>+1</strong> each time you act. Bars show your pace against the <strong>safe zone</strong> (conservative) and the <strong>hard limit</strong> (documented where one exists). Hourly counts reset on their own; daily counts reset at local midnight.</p>
+    <p style="font-size:12px;color:var(--faint)">Counts save in this browser when you open the file normally (they may not persist inside app previews). Rapid bursts are what trip filters — the same total spread across a day is fine.</p>
+  </div>
+
+  <div class="tracker-grid" id="trackerGrid"></div>
+
+  <div class="tracker-tools">
+    <button class="btn ghost" id="resetHour">Reset hour counts</button>
+    <button class="btn ghost" id="resetDay">Reset all counts</button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Where these numbers come from</h3>
+    <ul>
+      <li><strong>Posts — 2,400/day, split into smaller semi-hourly buckets</strong> <span class="badge doc">DOCS</span> — you can hit a wall long before 2,400 if you burst.</li>
+      <li><strong>Non-Premium accounts: 50 original posts + 200 replies per day</strong> <span class="badge doc">DOCS</span> — added May 2026. Premium accounts have higher caps.</li>
+      <li><strong>Follows — 400/day technical limit</strong> <span class="badge doc">DOCS</span>, but X separately prohibits "aggressive following," so the safe zone is far lower. After 5,000 total follows, a follower-ratio rule kicks in.</li>
+      <li><strong>DMs — 500/day for non-Premium</strong> <span class="badge doc">DOCS</span>; sending identical text to many people trips spam filters long before the cap.</li>
+      <li><strong>Likes and Reposts — no official published number</strong> <span class="badge est">EST</span>. The safe zones here are deliberately conservative, based on documented enforcement patterns (mass-liking bursts are a classic temporary-lock trigger). If you hit an action block, stop everything for a few hours — most restrictions clear within 24.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ TAB 3: THE ALGORITHM ============ -->
+<section class="panel" id="panel-algo">
+  <div class="card">
+    <div class="eyebrow">From the source code — Phoenix / Home-Mixer, open-sourced Jan 2026</div>
+    <h2>How the For You feed actually ranks your post</h2>
+    <p>X replaced its old hand-tuned system with <strong>Phoenix</strong>, a Grok-based AI model. For every post it might show a person, the model predicts the probability of each action that person could take. Your post's score for that viewer is:</p>
+    <p style="font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">Score = Σ ( weight × P(action) ) &nbsp;— summed over every action below</p>
+    <p><strong>The single most important fact:</strong> the same post gets a different score for every single viewer, based on that viewer's own engagement history. There is no universal "good post." There is only "good post <em>for people whose history looks like your audience</em>."</p>
+  </div>
+
+  <div class="card">
+    <h2>Every action the model predicts <span class="badge code">CODE</span></h2>
+    <table>
+      <tr><th>Predicted action</th><th>Weight</th><th>What it means for you</th></tr>
+      <tr><td>Reply</td><td class="pos">+</td><td>Posts that make people type a response. Questions, takes people want to add to, useful threads.</td></tr>
+      <tr><td>Like (favorite)</td><td class="pos">+</td><td>The baseline positive signal.</td></tr>
+      <tr><td>Repost</td><td class="pos">+</td><td>Content people want on their own profile.</td></tr>
+      <tr><td>Quote</td><td class="pos">+</td><td>Content people want to comment on publicly.</td></tr>
+      <tr><td>Share</td><td class="pos">+</td><td>The share button generally.</td></tr>
+      <tr><td>Share via DM</td><td class="pos">+</td><td>Predicted separately — "send this to a friend" content is its own tracked signal.</td></tr>
+      <tr><td>Share via copy link</td><td class="pos">+</td><td>Also its own signal. Highly shareable = multiple stacked positives.</td></tr>
+      <tr><td>Dwell (+ dwell time)</td><td class="pos">+</td><td>People stopping to read counts — substantive posts that hold attention score even without a tap.</td></tr>
+      <tr><td>Click / photo expand / profile click</td><td class="pos">+</td><td>Opening the post, expanding the image, visiting your profile — all predicted and rewarded.</td></tr>
+      <tr><td>Quality video view</td><td class="pos">+</td><td>Only counts if the video is longer than a minimum duration — ultra-short clips don't earn this weight at all.</td></tr>
+      <tr><td>Follow author</td><td class="pos">+</td><td>The model predicts whether seeing this post makes someone follow you.</td></tr>
+      <tr><td>"Not interested"</td><td class="neg">−</td><td>Directly subtracts. Content that makes people click "show less often" costs you.</td></tr>
+      <tr><td>Mute author</td><td class="neg">−</td><td>Subtracts — and a mute also removes you from that person's feed permanently.</td></tr>
+      <tr><td>Block author</td><td class="neg">−</td><td>Same, stronger relationship damage.</td></tr>
+      <tr><td>Report</td><td class="neg">−</td><td>The model predicting "people like this viewer tend to report posts like this" pushes your score down before anyone actually reports it.</td></tr>
+    </table>
+    <p style="font-size:12.5px"><strong>Honesty note:</strong> the exact numeric weights were removed from the public release ("excluded for security reasons"). Anyone quoting exact multipliers — "a reply is worth 13.5 likes" — is citing the retired 2023 system. What's verifiable now is <em>which</em> actions count and their <em>direction</em>, not their magnitudes.</p>
+  </div>
+
+  <div class="card">
+    <h2>Mechanics most people don't know <span class="badge code">CODE</span></h2>
+    <details open>
+      <summary>Muted words make you invisible — one keyword at a time</summary>
+      <div class="dbody"><p>Before scoring even happens, a filter checks your post's text against each viewer's muted-keyword list. Match = your post is removed from their feed entirely. It doesn't lower your score — <strong>you simply don't exist to that person.</strong></p><p>Practical edge: words that huge numbers of people mute (giveaway-speak, engagement-farm phrases, spammy crypto terms) silently shrink your audience even when the post is fine. Say the same thing in plainer words.</p></div>
+    </details>
+    <details>
+      <summary>Blocks and mutes are permanent audience loss</summary>
+      <div class="dbody"><p>A separate filter removes you from the feed of anyone who has blocked or muted you — forever, before ranking runs. Every person you antagonize into a mute is subtracted from your maximum possible reach. Ratio-farming with hostility is borrowing reach at a brutal interest rate.</p></div>
+    </details>
+    <details>
+      <summary>Posting 10 times in a row doesn't give you 10 slots</summary>
+      <div class="dbody"><p>An "author diversity" pass re-scores each feed: your best post keeps full score, your second-best is multiplied down, your third more so — decaying toward a floor. <strong>Flooding doesn't stack.</strong> Spacing posts across the day beats dumping them in one burst, because each feed load only really wants one post from you.</p></div>
+    </details>
+    <details>
+      <summary>Freshness is a hard gate, not a bonus</summary>
+      <div class="dbody"><p>An age filter drops posts older than a threshold from For You candidates entirely. Your window to earn engagement is short — which is why posting when your audience is actually awake matters more than any wording trick.</p></div>
+    </details>
+    <details>
+      <summary>Followers see you more easily than strangers</summary>
+      <div class="dbody"><p>Out-of-network posts (shown to people who don't follow you) get their score multiplied by a dampening factor — in-network is explicitly prioritized. Growing real followers permanently raises your baseline, because you skip that penalty for them. Going viral to strangers is fighting uphill; serving your followers is not.</p></div>
+    </details>
+    <details>
+      <summary>Trust & safety is a trapdoor under the whole system</summary>
+      <div class="dbody"><p>After ranking, a final visibility filter drops anything labeled deleted, spam, violent, gore, etc. <strong>No score survives it.</strong> A brilliant post with a rules problem gets zero distribution. This is why the "Stay Unsuspended" tab matters as much as this one.</p></div>
+    </details>
+    <details>
+      <summary>Your own scrolling trains what you see — and who sees you</summary>
+      <div class="dbody"><p>The model's only real input about a viewer is their recent action history: what they liked, replied to, reposted, dwelled on. Two consequences: (1) curate your own feed by engaging deliberately — the algorithm is extremely trainable; (2) your posts get shown to people whose history resembles the people who already engage with you. Early engagement from the <em>right</em> people shapes who the post travels to next.</p></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>What this means as a strategy</h2>
+    <ul>
+      <li><strong>Optimize for replies and shares, not likes.</strong> Every share type is predicted separately — content people send to a friend stacks multiple positive predictions at once.</li>
+      <li><strong>Write to hold attention.</strong> Dwell is weighted. A substantive post someone reads twice beats a hollow one-liner.</li>
+      <li><strong>Never trade a like for a mute.</strong> Negative predictions subtract directly. Rage-bait harvests likes from fans while the model learns everyone else wants to mute you.</li>
+      <li><strong>Videos need to be long enough to count.</strong> The quality-view weight only activates past a minimum duration.</li>
+      <li><strong>One great post beats five okay ones</strong> — diversity decay guarantees it.</li>
+      <li><strong>Post when your people are online.</strong> The age gate makes timing a hard constraint.</li>
+      <li><strong>Links:</strong> nothing in the public 2026 code hard-penalizes links, but click-away content earns fewer of the on-platform actions the model rewards. The common "link in the reply" tactic is community practice, not a coded rule — test both with your own audience.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ TAB 4: STAY UNSUSPENDED ============ -->
+<section class="panel" id="panel-rules">
+  <div class="card">
+    <div class="eyebrow">Play by the rules, keep the edge</div>
+    <h2>The bulletproof account routine</h2>
+    <p>Suspensions rarely come from one bad post. They come from <strong>patterns</strong>: bursts of identical activity, aggressive follow-churn, spam-shaped behavior, or ignoring an early warning. Everything below is about never producing those patterns.</p>
+  </div>
+
+  <div class="card">
+    <h2>Daily workflow</h2>
+    <ul>
+      <li><strong>Post 1–3 quality originals, spaced hours apart.</strong> Diversity decay means flooding is wasted anyway.</li>
+      <li><strong>Reply genuinely more than you post.</strong> Replies are a top-weighted signal and build the follower graph that removes your out-of-network penalty. Always vary your wording — identical replies pasted around is textbook spam behavior.</li>
+      <li><strong>Engage in human rhythms.</strong> Like as you actually read. A hundred likes in five minutes reads as a script; the same hundred across a day reads as a person.</li>
+      <li><strong>Follow people you'll actually read</strong> — a handful at a time. Never mass-follow, and never mass-unfollow shortly after. "Follow churn" is explicitly prohibited and easy for X to detect.</li>
+      <li><strong>Use the Pace Tracker tab</strong> any day you're more active than usual — big days are exactly when people trip limits.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>New or quiet account? Warm it up</h2>
+    <ul>
+      <li><strong>Week 1:</strong> complete the profile (photo, bio, header — blank profiles score as bot-like everywhere), follow 5–15 accounts/day, mostly read, like sparingly, a few genuine replies.</li>
+      <li><strong>Week 2–3:</strong> begin posting 1–2 originals/day, keep replying, follow slowly.</li>
+      <li><strong>Week 4+:</strong> normal activity. New accounts get less benefit of the doubt from automated systems — the identical burst that a 10-year account survives can lock a 10-day account.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>The rules that actually get people suspended</h2>
+    <details open>
+      <summary>Platform manipulation & spam — the #1 cause</summary>
+      <div class="dbody"><ul>
+        <li>Posting <strong>duplicate or near-duplicate content</strong> across posts, replies, or accounts.</li>
+        <li><strong>Buying/selling engagement</strong>, follow-trains, "follow back" schemes, F4F.</li>
+        <li><strong>Mass, unsolicited @mentions or DMs</strong>, especially with links.</li>
+        <li><strong>Hashtag spam</strong> — irrelevant or excessive tags to hijack visibility.</li>
+        <li><strong>Coordinated activity across multiple accounts</strong> to amplify the same content.</li>
+        <li><strong>Automation without API authorization</strong> — bots pretending to be human.</li>
+      </ul></div>
+    </details>
+    <details>
+      <summary>Abuse, threats & targeting</summary>
+      <div class="dbody"><ul>
+        <li>Violent threats or wishing harm — zero tolerance, including "jokes" that read as threats.</li>
+        <li>Targeted harassment, pile-on brigading, encouraging others to harass.</li>
+        <li>Hateful conduct directed at protected categories.</li>
+        <li>Posting others' private info (addresses, phone numbers, private images) — doxxing suspends fast, including reposting someone else's dox.</li>
+      </ul></div>
+    </details>
+    <details>
+      <summary>Identity & authenticity</summary>
+      <div class="dbody"><ul>
+        <li>Impersonating people or brands (parody requires clear labeling per X's parody policy).</li>
+        <li><strong>Ban evasion</strong> — creating a new account to dodge a suspension, or even announcing that you did. This suspends the new account too.</li>
+        <li>Buying/selling accounts, or operating armies of fake ones.</li>
+      </ul></div>
+    </details>
+    <details>
+      <summary>Content lines that trigger enforcement</summary>
+      <div class="dbody"><ul>
+        <li>Sexual content involving minors — instant permanent suspension, reported to authorities.</li>
+        <li>Non-consensual intimate media.</li>
+        <li>Unlabeled synthetic/manipulated media presented as real to deceive.</li>
+        <li>Posting full copyrighted works (episodes, movies, full song audio) — DMCA strikes accumulate to suspension.</li>
+        <li>Scams: crypto doubling, fake giveaways requiring payment, phishing links.</li>
+      </ul></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>If reach suddenly drops — the self-diagnosis checklist</h2>
+    <ul>
+      <li><strong>Check for a notice first.</strong> X now labels many restrictions in-app (account status, temporary-lock timers). If there's a notice, comply and wait — appealing routine limits rarely helps, repeating the behavior always hurts.</li>
+      <li><strong>Audit your last 48 hours:</strong> any burst? identical replies? a spike of follows? a post getting mass-reported? That's usually the cause, and it usually clears within 24–72 hours of clean behavior.</li>
+      <li><strong>Don't delete-and-repost repeatedly</strong> — deleting and reposting the same content to retry the algorithm is itself a duplicate-content pattern.</li>
+      <li><strong>Don't post "am I shadowbanned?" tests every hour.</strong> Just behave normally for 48–72 hours; behavior-based limits decay.</li>
+      <li><strong>Never buy a "fix."</strong> Every service selling shadowban removal or engagement is either a scam, a TOS violation, or both.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>The mindset</h2>
+    <p>The people who get buried are the ones who fight the system — burst-posting, engagement pods, recycled content, follow-churn. The system is explicitly built to detect exactly that. The edge isn't a trick; it's that <strong>the algorithm is designed to reward the behavior most people are too impatient to do</strong>: consistent, spaced, genuinely engaging posts to an audience you built one real interaction at a time. Play the long game the code is literally written to reward.</p>
+  </div>
+</section>
+
+<footer>
+  X SIGNAL COMPANION · fully offline · nothing you type leaves this page · no login, no tracking<br>
+  Grounded in X's open-source For You algorithm (Phoenix/Home-Mixer, Jan 2026), X Help Center documented limits, and X's published Rules. Exact model weights and safety-classifier internals are not public; where numbers are estimates they are labeled EST and chosen conservatively. This is guidance, not a guarantee — X changes enforcement and limits without notice. Share this file freely.
+</footer>
+</div>
+
+<script>
+/* ---------- safe storage (works as a normal file; degrades gracefully in sandboxed previews) ---------- */
+var memStore = {};
+var store = {
+  get: function(k){ try { var v = window.localStorage.getItem(k); return v === null ? (k in memStore ? memStore[k] : null) : v; } catch(e){ return (k in memStore ? memStore[k] : null); } },
+  set: function(k,v){ memStore[k] = v; try { window.localStorage.setItem(k,v); } catch(e){} },
+};
+
+/* ---------- tabs ---------- */
+var tabs = document.querySelectorAll('.tab');
+tabs.forEach(function(t){
+  t.addEventListener('click', function(){
+    tabs.forEach(function(x){ x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- composer state ---------- */
+var draft = document.getElementById('draft');
+var charcount = document.getElementById('charcount');
+var kind = 'post';
+var kindSeg = document.getElementById('kindSeg');
+kindSeg.querySelectorAll('button').forEach(function(b){
+  b.addEventListener('click', function(){
+    kindSeg.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); kind = b.dataset.kind;
+  });
+});
+function updateCount(){
+  var max = document.getElementById('isPremium').checked ? 25000 : 280;
+  var len = Array.from(draft.value).length;
+  charcount.textContent = len + ' / ' + max;
+  charcount.classList.toggle('over', len > max);
+}
+draft.addEventListener('input', updateCount);
+document.getElementById('isPremium').addEventListener('change', updateCount);
+document.getElementById('clearBtn').addEventListener('click', function(){
+  draft.value=''; updateCount();
+  document.getElementById('findings').innerHTML='';
+  document.getElementById('meterBlock').style.display='none';
+});
+
+/* ---------- analyzer ---------- */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+var BAIT = [
+  {re:/\b(like\s*(and|&|\+)?\s*(retweet|repost|rt)|rt\s*(and|&|\+)\s*like)\b/i, label:'"like and repost" ask'},
+  {re:/\b(follow\s*(me|back)|f4f|follow\s*4\s*follow|follow\s*for\s*follow|follow\s*train|gain\s*train)\b/i, label:'follow-me / follow-train phrasing'},
+  {re:/\b(tag\s+(a|3|three|your)\s+friend)/i, label:'"tag a friend" bait'},
+  {re:/\b(comment\s+below|drop\s+a\s+(comment|like|follow))\b/i, label:'"comment below / drop a like" bait'},
+  {re:/\b(retweet|repost)\s+(this|if|to)\b/i, label:'"repost this/if" ask'},
+  {re:/\b(turn\s+on\s+(my\s+)?notifications)\b/i, label:'notifications ask'}
+];
+var MUTED_COMMON = [
+  {re:/\bgiveaway\b/i, w:'giveaway'},
+  {re:/\bairdrops?\b/i, w:'airdrop'},
+  {re:/\bpromo(tion)?\b/i, w:'promo'},
+  {re:/\bnfts?\b/i, w:'NFT'},
+  {re:/\bcryptos?\b/i, w:'crypto'},
+  {re:/\bforex\b/i, w:'forex'},
+  {re:/\bonlyfans\b/i, w:'onlyfans'},
+  {re:/\bsign\s*up\s*(now|today|here)\b/i, w:'sign up now'},
+  {re:/\blink\s+in\s+bio\b/i, w:'link in bio'}
+];
+var SCAM = [
+  {re:/\b(double|triple|10x|100x)\s+(your\s+)?(money|crypto|btc|bitcoin|eth|investment|sol)\b/i, label:'money-multiplying promise (classic scam pattern)'},
+  {re:/\b(send|deposit)\s+(me\s+)?\$?\d+.*(get|receive|back)\b/i, label:'"send X get Y" pattern (scam-shaped)'},
+  {re:/\b(cash\s*app|venmo|zelle)\s*flip\b/i, label:'payment-app "flip" (scam pattern)'},
+  {re:/\bseed\s*phrase\b/i, label:'seed phrase mention — never solicit or share these'},
+  {re:/\bdm\s+me\s+to\s+(claim|win|receive)\b/i, label:'"DM me to claim" (giveaway-scam shape)'},
+  {re:/\bguaranteed\s+(profit|returns?|income)\b/i, label:'"guaranteed returns" claim'}
+];
+var BUYSELL = [
+  {re:/\b(buy|sell(ing)?|cheap)\s+(followers|likes|retweets|reposts|views|engagement)\b/i, label:'buying/selling engagement — explicit platform-manipulation violation'}
+];
+var EVASION = [
+  {re:/\b(my\s+)?(new|backup|alt)\s+account\s+(after|since|because).{0,30}(ban|suspend)/i, label:'ban-evasion announcement — this alone suspends the new account'}
+];
+var THREAT = [
+  {re:/\b(i('|')?ll|i\s+will|gonna|going\s+to)\s+(kill|shoot|stab|hurt|beat)\s+(you|him|her|them|u)\b/i, label:'reads as a violent threat'},
+  {re:/\b(you|he|she|they)\s+(should|deserve(s)?\s+to)\s+die\b/i, label:'wishing death/harm on someone'},
+  {re:/\bkys\b/i, label:'"kys" — abuse policy violation, heavily enforced'}
+];
+var PHONE = /(\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
+var ADDRESS = /\b\d{1,5}\s+\w+(\s\w+)?\s+(st(reet)?|ave(nue)?|rd|road|blvd|boulevard|dr(ive)?|lane|ln|court|ct)\b/i;
+var LIVES_AT = /\b(home\s+address|lives?\s+at|address\s+is)\b/i;
+var PROFANITY = /\b(fuck(er|ing|ed)?|shit(ty)?|bitch(es)?|asshole|motherfucker|cunt|dickhead)\b/i;
+
+function analyze(){
+  var text = draft.value;
+  var f = []; // findings: {level, title, detail}
+  var score = 62; // neutral baseline
+  var hasImage = document.getElementById('hasImage').checked;
+  var hasVideo = document.getElementById('hasVideo').checked;
+  var premium = document.getElementById('isPremium').checked;
+  var len = Array.from(text).length;
+  var trimmed = text.trim();
+
+  if(!trimmed && !hasImage && !hasVideo){
+    render([{level:'info', title:'Nothing to check yet', detail:'Type a draft (or tick image/video) and run the pre-check.'}], null);
+    return;
+  }
+
+  /* ---- RED: rules-level ---- */
+  THREAT.forEach(function(t){ if(t.re.test(text)){ f.push({level:'red', title:'Violence/abuse policy risk', detail:'This ' + t.label + '. X enforces violent-speech rules aggressively, including hyperbole that reads as a threat. Rewrite before posting.'}); score -= 45; }});
+  if(PHONE.test(text) || (ADDRESS.test(text) && LIVES_AT.test(text)) || (LIVES_AT.test(text) && ADDRESS.test(text))){
+    f.push({level:'red', title:'Private information risk', detail:'This looks like it contains a phone number or a physical address. Posting someone\'s private info (doxxing) is a fast suspension — even resharing a dox someone else posted. If it\'s a business number, ignore this.'}); score -= 35;
+  } else if(PHONE.test(text)){
+    f.push({level:'red', title:'Phone number detected', detail:'If this is someone\'s personal number, posting it violates X\'s private information policy. Business/public numbers are fine.'}); score -= 20;
+  }
+  SCAM.forEach(function(t){ if(t.re.test(text)){ f.push({level:'red', title:'Scam-shaped pattern', detail:'Contains a ' + t.label + '. Even as a joke, posts matching financial-scam patterns get filtered, mass-reported, and can lock the account.'}); score -= 40; }});
+  BUYSELL.forEach(function(t){ if(t.re.test(text)){ f.push({level:'red', title:'Platform manipulation', detail:t.label + '. This is one of the most-enforced rules on X.'}); score -= 45; }});
+  EVASION.forEach(function(t){ if(t.re.test(text)){ f.push({level:'red', title:'Ban evasion', detail:t.label + '.'}); score -= 50; }});
+
+  /* ---- AMBER: reach ---- */
+  var hashtags = (text.match(/#[\p{L}\p{N}_]+/gu) || []);
+  if(hashtags.length > 2){
+    f.push({level:'amber', title: hashtags.length + ' hashtags', detail:'Hashtag stacking reads as spam to both users and X\'s manipulation rules. The 2026 model doesn\'t use hashtags as a ranking feature at all — it understands your text directly. Keep 0–1, only if genuinely relevant.'}); score -= 10;
+  } else if(hashtags.length > 0){
+    f.push({level:'info', title:'Hashtags aren\'t what they used to be', detail:'The current model has no hand-engineered hashtag feature — it reads your actual words. Tags mostly matter for human search/browse now.'});
+  }
+  var mentions = (text.match(/@\w+/g) || []);
+  if(mentions.length > 3){ f.push({level:'amber', title:mentions.length + ' @mentions', detail:'Mass-mentioning is a documented spam signal, and unsolicited tagging annoys people into muting you — which removes you from their feed permanently.'}); score -= 10; }
+
+  var baitHits = BAIT.filter(function(b){ return b.re.test(text); });
+  if(baitHits.length){
+    f.push({level:'amber', title:'Engagement bait: ' + baitHits.map(function(b){return b.label;}).join('; '), detail:'Bait phrasing correlates with "not interested" clicks and mutes — both directly subtract from your score in the ranking formula. Earn the action with content instead of asking for it.'}); score -= 12 * baitHits.length;
+  }
+  var mutedHits = MUTED_COMMON.filter(function(m){ return m.re.test(text); });
+  if(mutedHits.length){
+    f.push({level:'amber', title:'Commonly-muted words: ' + mutedHits.map(function(m){return m.w;}).join(', '), detail:'Verified mechanic from the code: if a viewer muted any word in your post, the post is removed from their feed before scoring even runs. These words are on a lot of mute lists. Rephrase if you can say it plainly.'}); score -= 6 * mutedHits.length;
+  }
+
+  var letters = text.replace(/[^a-zA-Z]/g,'');
+  var caps = text.replace(/[^A-Z]/g,'');
+  if(letters.length > 15 && caps.length / letters.length > 0.6){
+    f.push({level:'amber', title:'Mostly ALL CAPS', detail:'Shouting correlates with mutes and "show less" clicks. Use caps for one or two words of emphasis, not the whole post.'}); score -= 8;
+  }
+  if(/(.)\1{4,}/.test(text) || /[!?]{4,}/.test(text)){
+    f.push({level:'amber', title:'Repeated characters (!!!!! / soooo)', detail:'Heavy character repetition is a low-quality/spam-shaped signal. One exclamation point does the work of five.'}); score -= 5;
+  }
+  var emoji = (text.match(/\p{Extended_Pictographic}/gu) || []);
+  if(emoji.length > 6){ f.push({level:'amber', title:emoji.length + ' emoji', detail:'Emoji walls read as spam-shaped and hurt readability (dwell is a positively-weighted signal — make the post easy to actually read).'}); score -= 5; }
+
+  var links = (text.match(/https?:\/\/\S+|\b\w+\.(com|net|org|io|gg|ly|co|me)\/\S*/gi) || []);
+  if(links.length){
+    f.push({level:'info', title:'Contains a link', detail:'No hard link penalty exists in the public 2026 code — but links pull people off-platform, away from the replies/reposts/dwell the model rewards. Common tactic: hook in the post, link in the first reply. That\'s community practice, not a coded rule — test it with your audience.'});
+    if(/bit\.ly|tinyurl|t\.co\/\w+|goo\.gl|shorturl/i.test(text)){
+      f.push({level:'amber', title:'Shortened/obscured link', detail:'Link shorteners are heavily used by spam and get extra scrutiny from filters and users alike. Use the real URL.'}); score -= 6;
+    }
+  }
+  if(PROFANITY.test(text)){
+    f.push({level:'info', title:'Profanity present', detail:'Not a coded ranking penalty in the public release, but heavy profanity can limit advertiser-adjacent distribution and lands on some mute lists. Fine for your voice — just know the trade.'});
+  }
+  var maxLen = premium ? 25000 : 280;
+  if(len > maxLen){ f.push({level:'red', title:'Over the character limit', detail:'This is ' + len + ' characters; your limit is ' + maxLen + '. It won\'t post as-is.'}); score -= 15; }
+  if(kind==='post' && len > 0 && len < 25 && !hasImage && !hasVideo){
+    f.push({level:'amber', title:'Very short, no media', detail:'Almost nothing here to earn dwell, clicks, or replies. Either add substance/media or make the brevity razor-sharp.'}); score -= 6;
+  }
+  if(len > 500 && text.split(/\n/).length < 3){
+    f.push({level:'amber', title:'Wall of text', detail:'Long is fine — dwell time is positively weighted — but break it into paragraphs so people actually read instead of scrolling past.'}); score -= 4;
+  }
+
+  /* ---- GREEN ---- */
+  if(/\?/.test(text) && baitHits.length===0){
+    f.push({level:'green', title:'Invites replies', detail:'Genuine questions drive the reply prediction — one of the strongest positive signals in the scoring formula.'}); score += 8;
+  }
+  if(hasImage){ f.push({level:'green', title:'Image attached', detail:'Photo-expand is its own positively-weighted predicted action. Native media earns signals text alone can\'t.'}); score += 7; }
+  if(hasVideo){ f.push({level:'green', title:'Video attached', detail:'Quality video views are positively weighted — but only for videos above a minimum duration (verified in code). A multi-second clip that holds attention beats a 2-second loop, which earns no video weight at all.'}); score += 8; }
+  if(len >= 80 && len <= maxLen && text.split(/\n/).length >= 2){
+    f.push({level:'green', title:'Substantive and scannable', detail:'Enough content to earn dwell, broken up enough to get read.'}); score += 5;
+  }
+  if(kind==='reply'){
+    f.push({level:'info', title:'Reply mode', detail:'Replies build the relationships that remove your out-of-network penalty (verified mechanic: followers see you without the score dampening strangers apply). Specific, additive replies also make people visit your profile — profile clicks are positively weighted. Non-Premium accounts: 200 replies/day cap.'});
+  }
+  if(f.filter(function(x){return x.level==='red'||x.level==='amber';}).length===0){
+    f.push({level:'green', title:'No red flags found', detail:'Pattern-wise this is clean. Timing now matters most: post when your audience is active — the age filter gives every post a short window to earn its engagement.'});
+  }
+
+  score = Math.max(4, Math.min(96, score));
+  render(f, score);
+}
+
+function render(findings, score){
+  var order = {red:0, amber:1, green:2, info:3};
+  findings.sort(function(a,b){ return order[a.level]-order[b.level]; });
+  var html = findings.map(function(x){
+    return '<div class="finding '+x.level+'"><span class="dot"></span><div class="fbody"><div class="ftitle">'+esc(x.title)+'</div><div class="fdetail">'+esc(x.detail)+'</div></div></div>';
+  }).join('');
+  document.getElementById('findings').innerHTML = html;
+
+  var mb = document.getElementById('meterBlock');
+  if(score===null){ mb.style.display='none'; return; }
+  mb.style.display='block';
+  var fill = document.getElementById('meterFill');
+  fill.style.width = score + '%';
+  var v = document.getElementById('verdict'), vs = document.getElementById('verdictSub');
+  var reds = findings.filter(function(x){return x.level==='red';}).length;
+  var ambers = findings.filter(function(x){return x.level==='amber';}).length;
+  if(reds){ fill.style.background='var(--red)'; v.textContent='DO NOT POST YET'; v.style.color='var(--red)';
+    vs.textContent='Fix the red items first — rules problems can zero out distribution entirely and put marks on the account.';
+  } else if(score < 55){ fill.style.background='var(--amber)'; v.textContent='WILL LIKELY UNDERPERFORM'; v.style.color='var(--amber)';
+    vs.textContent= ambers + ' reach-harming pattern' + (ambers===1?'':'s') + ' working against this draft. Each one is fixable.';
+  } else if(score < 72){ fill.style.background='var(--amber)'; v.textContent='OKAY — ROOM TO IMPROVE'; v.style.color='var(--amber)';
+    vs.textContent='Clean enough to post; the amber notes show where reach is being left on the table.';
+  } else { fill.style.background='var(--green)'; v.textContent='CLEAR TO POST'; v.style.color='var(--green)';
+    vs.textContent='Good signal shape. Remember: the model scores per-viewer — your audience\'s response is the real test.';
+  }
+}
+document.getElementById('analyzeBtn').addEventListener('click', analyze);
+
+/* ---------- pace tracker ---------- */
+var COUNTERS = [
+  {id:'likes',   name:'Likes',   hourSafe:40,  daySafe:400,  dayHard:null, hardLabel:'no official cap', src:'EST',
+   note:'No official number exists. Burst-liking is the classic temporary-lock trigger — pace beats totals.'},
+  {id:'reposts', name:'Reposts', hourSafe:15,  daySafe:100,  dayHard:null, hardLabel:'counts toward 2,400 post cap', src:'EST',
+   note:'Reposts count toward the 2,400/day post limit. Keep them spread out.'},
+  {id:'follows', name:'Follows', hourSafe:12,  daySafe:120,  dayHard:400,  hardLabel:'400/day technical limit', src:'DOCS',
+   note:'"Aggressive following" is prohibited separately from the 400 cap — stay well under, ~10–15/hr.'},
+  {id:'posts',   name:'Original posts', hourSafe:6, daySafe:40, dayHard:50, hardLabel:'50/day non-Premium (2,400 technical)', src:'DOCS',
+   note:'Non-Premium: 50 originals/day. The algorithm\'s diversity decay makes flooding pointless anyway.'},
+  {id:'replies', name:'Replies', hourSafe:20,  daySafe:150,  dayHard:200,  hardLabel:'200/day non-Premium', src:'DOCS',
+   note:'Vary your wording — identical replies across accounts is textbook spam behavior.'},
+  {id:'dms',     name:'DMs sent', hourSafe:15, daySafe:100,  dayHard:500,  hardLabel:'500/day non-Premium', src:'DOCS',
+   note:'Identical text to many recipients trips filters far below the cap. Personalize.'}
+];
+function todayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function hourKey(){ var d=new Date(); return todayKey()+'-h'+d.getHours(); }
+function loadCounts(){
+  var raw = store.get('xsc_counts');
+  var data = raw ? JSON.parse(raw) : {};
+  if(data._day !== todayKey()){ data = {_day: todayKey()}; }
+  return data;
+}
+function saveCounts(d){ store.set('xsc_counts', JSON.stringify(d)); }
+function getVals(data, id){
+  var day = data[id+'_day'] || 0;
+  var hk = hourKey();
+  var hour = (data[id+'_hk'] === hk) ? (data[id+'_hour']||0) : 0;
+  return {day:day, hour:hour};
+}
+function bump(id, delta){
+  var data = loadCounts();
+  var hk = hourKey();
+  if(data[id+'_hk'] !== hk){ data[id+'_hk']=hk; data[id+'_hour']=0; }
+  data[id+'_hour'] = Math.max(0,(data[id+'_hour']||0)+delta);
+  data[id+'_day']  = Math.max(0,(data[id+'_day']||0)+delta);
+  saveCounts(data);
+  renderTracker();
+  checkCooldown(data);
+}
+function barColor(pct){ return pct>=100 ? 'var(--red)' : pct>=70 ? 'var(--amber)' : 'var(--green)'; }
+function renderTracker(){
+  var data = loadCounts();
+  var grid = document.getElementById('trackerGrid');
+  grid.innerHTML = COUNTERS.map(function(c){
+    var v = getVals(data, c.id);
+    var hPct = Math.min(130, Math.round(v.hour / c.hourSafe * 100));
+    var dRef = c.dayHard || c.daySafe;
+    var dPct = Math.min(130, Math.round(v.day / dRef * 100));
+    var status, scol;
+    if((c.dayHard && v.day >= c.dayHard) || v.hour >= c.hourSafe*1.5){ status='◼ STOP — over the line'; scol='var(--red)'; }
+    else if(v.hour >= c.hourSafe || v.day >= c.daySafe){ status='▲ SLOW DOWN — approaching limits'; scol='var(--amber)'; }
+    else { status='● SAFE ZONE'; scol='var(--green)'; }
+    return '<div class="counter">'
+      + '<div class="cname">'+c.name+'<span class="badge '+(c.src==='DOCS'?'doc':'est')+'">'+c.src+'</span></div>'
+      + '<div class="cnums"><span class="big">'+v.day+'</span><span class="unit">today · '+v.hour+' this hour</span></div>'
+      + '<div class="cbars">'
+      +   '<div class="cbar-row"><span class="cbar-label">HR</span><div class="cbar"><div class="cbar-fill" style="width:'+Math.min(100,hPct)+'%;background:'+barColor(hPct)+'"></div></div><span class="cbar-val">'+v.hour+' / '+c.hourSafe+' safe</span></div>'
+      +   '<div class="cbar-row"><span class="cbar-label">DAY</span><div class="cbar"><div class="cbar-fill" style="width:'+Math.min(100,dPct)+'%;background:'+barColor(dPct)+'"></div></div><span class="cbar-val">'+v.day+' / '+dRef+'</span></div>'
+      + '</div>'
+      + '<div class="cbtns"><button class="minus" data-id="'+c.id+'" data-d="-1" aria-label="subtract one '+c.name+'">−1</button><button data-id="'+c.id+'" data-d="1" aria-label="add one '+c.name+'">+1</button></div>'
+      + '<div class="cstatus" style="color:'+scol+'">'+status+'</div>'
+      + '<div class="climit">'+c.hardLabel+' · '+c.note+'</div>'
+      + '</div>';
+  }).join('');
+  grid.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){ bump(b.dataset.id, parseInt(b.dataset.d,10)); });
+  });
+}
+/* cooldown */
+var cooldownEnd = 0, cdInterval = null;
+function checkCooldown(data){
+  var worst = null;
+  COUNTERS.forEach(function(c){
+    var v = getVals(data, c.id);
+    if(v.hour >= c.hourSafe){ worst = worst || c; }
+  });
+  if(worst && Date.now() > cooldownEnd){
+    cooldownEnd = Date.now() + 30*60*1000;
+    startCooldownUI(worst);
+  }
+}
+function startCooldownUI(c){
+  var banner = document.getElementById('cooldownBanner');
+  banner.classList.add('show');
+  document.getElementById('cooldownReason').textContent =
+    'Your hourly ' + c.name.toLowerCase() + ' pace crossed the safe zone. Suggested: pause all activity ~30 minutes. Bursty behavior is what automated systems key on — the same totals, spread out, are invisible.';
+  if(cdInterval) clearInterval(cdInterval);
+  cdInterval = setInterval(function(){
+    var left = cooldownEnd - Date.now();
+    if(left <= 0){ clearInterval(cdInterval); banner.classList.remove('show'); return; }
+    var m = Math.floor(left/60000), s = Math.floor((left%60000)/1000);
+    document.getElementById('cooldownTimer').textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }, 500);
+}
+document.getElementById('resetHour').addEventListener('click', function(){
+  var data = loadCounts();
+  COUNTERS.forEach(function(c){ data[c.id+'_hour']=0; data[c.id+'_hk']=hourKey(); });
+  saveCounts(data); renderTracker();
+});
+document.getElementById('resetDay').addEventListener('click', function(){
+  saveCounts({_day: todayKey()}); renderTracker();
+  document.getElementById('cooldownBanner').classList.remove('show'); cooldownEnd=0;
+});
+renderTracker();
+setInterval(renderTracker, 60000); /* roll hour buckets over */
+updateCount();
+</script>
+</body>
+</html>
